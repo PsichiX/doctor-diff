@@ -3,6 +3,11 @@ name = "doctor-diff-core"
 version = "0.1.0"
 authors = ["Patryk 'PsichiX' Budzynski <psichix@gmail.com>"]
 edition = "2018"
+description = "Tool for creating and applying compressed archives of changes between two directory workspaces"
+license = "MIT"
+documentation = "https://docs.rs/doctor-diff"
+repositiory = "https://github.com/PsichiX/doctor-diff"
+homepage = "https://github.com/PsichiX/doctor-diff"
 
 [dependencies]
 ring = "0.16"
