@@ -1,0 +1,5 @@
+[workspace]
+members = [
+  "doctor-diff-core",
+  "doctor-diff-cli",
+]
