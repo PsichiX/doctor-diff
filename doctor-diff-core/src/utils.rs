@@ -13,24 +13,26 @@ where
     P: AsRef<Path>,
 {
     let mut result = HashMap::new();
-    hash_directory_inner(path, &mut result)?;
+    hash_directory_inner(Path::new("").as_ref(), path.as_ref(), &mut result)?;
     Ok(result)
 }
 
-fn hash_directory_inner<P>(path: P, result: &mut HashMap<PathBuf, HashValue>) -> Result<()>
+fn hash_directory_inner<P>(root: P, path: P, result: &mut HashMap<PathBuf, HashValue>) -> Result<()>
 where
     P: AsRef<Path>,
 {
+    let root = root.as_ref();
     let path = path.as_ref();
     if path.is_dir() {
         for entry in read_dir(path)? {
             let entry = entry?;
+            let root = root.join(entry.file_name());
             let path = path.join(entry.file_name());
             if path.is_dir() {
-                hash_directory_inner(path, result)?;
+                hash_directory_inner(root, path, result)?;
             } else {
                 let hash = sha256_stream(File::open(&path)?)?;
-                result.insert(path.to_owned(), hash);
+                result.insert(root.to_owned(), hash);
             }
         }
     }

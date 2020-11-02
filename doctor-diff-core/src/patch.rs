@@ -3,12 +3,12 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
     env::temp_dir,
-    fs::{read_to_string, remove_file, write, File},
+    fs::{create_dir_all, read_to_string, remove_file, write, File},
     io::{Read, Result, Write},
     path::{Path, PathBuf},
     time::SystemTime,
 };
-use zip::{write::FileOptions, ZipArchive, ZipWriter};
+use zip::{write::FileOptions, CompressionMethod, ZipArchive, ZipWriter};
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Change {
@@ -70,18 +70,10 @@ pub fn diff_changes(
         }
     }
     for path in server_paths.difference(&client_paths) {
-        let server_hash = server_hashes.get(*path).unwrap();
-        let client_hash = client_hashes.get(*path).unwrap();
-        if server_hash != client_hash {
-            result.insert((*path).to_owned(), Change::Add);
-        }
+        result.insert((*path).to_owned(), Change::Add);
     }
-    for path in client_paths.intersection(&server_paths) {
-        let server_hash = server_hashes.get(*path).unwrap();
-        let client_hash = client_hashes.get(*path).unwrap();
-        if server_hash != client_hash {
-            result.insert((*path).to_owned(), Change::Remove);
-        }
+    for path in client_paths.difference(&server_paths) {
+        result.insert((*path).to_owned(), Change::Remove);
     }
     result
 }
@@ -99,7 +91,7 @@ where
     let mut archive = ZipWriter::new(File::create(archive)?);
     let comment = serde_json::to_string_pretty(changes)?;
     archive.set_comment(&comment);
-    let options = FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    let options = FileOptions::default().compression_method(CompressionMethod::Bzip2);
     for (path, change) in changes {
         match change {
             Change::Add | Change::Update => {
@@ -132,8 +124,11 @@ where
     let changes = serde_json::from_slice::<HashMap<PathBuf, Change>>(archive.comment())?;
     for (path, change) in changes {
         match change {
-            Change::Add | Change::Update => match archive.by_name(&path.to_string_lossy()) {
+            Change::Add | Change::Update => match archive.by_name(&archivable_path(&path)) {
                 Ok(mut reader) => {
+                    let mut dir = workspace.as_ref().join(&path);
+                    dir.pop();
+                    create_dir_all(dir)?;
                     println!("* Unarchive change: {:?}", path);
                     let mut writer = File::create(workspace.as_ref().join(&path))?;
                     let mut buffer = [0; 10240];
@@ -155,4 +150,11 @@ where
         }
     }
     Ok(())
+}
+
+pub fn archivable_path<P>(path: P) -> String
+where
+    P: AsRef<Path>,
+{
+    path.as_ref().to_string_lossy().replace("\\", "/")
 }
