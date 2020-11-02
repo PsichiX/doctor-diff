@@ -55,7 +55,7 @@ where
     unarchive_changes(workspace, archive)
 }
 
-fn diff_changes(
+pub fn diff_changes(
     client_hashes: &HashMap<PathBuf, HashValue>,
     server_hashes: &HashMap<PathBuf, HashValue>,
 ) -> HashMap<PathBuf, Change> {
@@ -86,7 +86,7 @@ fn diff_changes(
     result
 }
 
-fn archive_changes<P, PD>(
+pub fn archive_changes<P, PD>(
     workspace: P,
     archive: PD,
     changes: &HashMap<PathBuf, Change>,
@@ -123,7 +123,7 @@ where
     Ok(())
 }
 
-fn unarchive_changes<P>(workspace: P, archive: P) -> Result<()>
+pub fn unarchive_changes<P>(workspace: P, archive: P) -> Result<()>
 where
     P: AsRef<Path>,
 {
